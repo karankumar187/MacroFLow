@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const DailyLog = require('../models/DailyLog');
-const { chatWithCoach } = require('../services/gemini');
+const { chatWithCoach } = require('../services/hf-api');
 
 // Chat with AI Coach
 router.post('/', async (req, res) => {
