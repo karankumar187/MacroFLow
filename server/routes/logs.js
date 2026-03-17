@@ -30,6 +30,7 @@ router.post('/parse', async (req, res) => {
       protein: f.protein,
       carbs: f.carbs,
       fat: f.fat,
+      fiber: f.fiber || 0,
       estimatedWeight: f.estimated_weight_g,
       source: 'text',
       loggedAt: new Date()
@@ -64,6 +65,7 @@ router.post('/photo', upload.single('image'), async (req, res) => {
       protein: f.protein,
       carbs: f.carbs,
       fat: f.fat,
+      fiber: f.fiber || 0,
       estimatedWeight: f.estimated_weight_g,
       source: 'photo',
       loggedAt: new Date()
@@ -117,7 +119,7 @@ router.delete('/:logId/meal/:mealId', async (req, res) => {
     const log = await DailyLog.findById(req.params.logId);
     if (!log) return res.status(404).json({ error: 'Log not found' });
 
-    log.meals.id(req.params.mealId).deleteOne();
+    log.meals.pull(req.params.mealId);
     await log.save();
 
     res.json(log);

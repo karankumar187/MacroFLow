@@ -6,6 +6,7 @@ const mealSchema = new mongoose.Schema({
   protein: { type: Number, required: true },
   carbs: { type: Number, required: true },
   fat: { type: Number, required: true },
+  fiber: { type: Number, default: 0 },
   estimatedWeight: { type: Number, default: 0 }, // grams
   source: { type: String, enum: ['text', 'photo'], default: 'text' },
   loggedAt: { type: Date, default: Date.now }
@@ -26,8 +27,9 @@ dailyLogSchema.virtual('totals').get(function() {
     calories: acc.calories + meal.calories,
     protein: acc.protein + meal.protein,
     carbs: acc.carbs + meal.carbs,
-    fat: acc.fat + meal.fat
-  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+    fat: acc.fat + meal.fat,
+    fiber: acc.fiber + (meal.fiber || 0)
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 });
 
 dailyLogSchema.set('toJSON', { virtuals: true });

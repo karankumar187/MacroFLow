@@ -102,7 +102,8 @@ export default function Dashboard() {
     protein: acc.protein + m.protein,
     carbs: acc.carbs + m.carbs,
     fat: acc.fat + m.fat,
-  }), { calories: 0, protein: 0, carbs: 0, fat: 0 }) || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    fiber: acc.fiber + (m.fiber || 0),
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }) || { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
 
   // Motivational tip
   const calPct = (totals.calories / (user?.calorieGoal || 2100)) * 100;
@@ -256,10 +257,11 @@ export default function Dashboard() {
                     </div>
                     <div style={{ fontSize: '18px', fontWeight: 800, color: '#1a1a1a' }}>{meal.calories} Cal</div>
                   </div>
-                  <div style={{ display: 'flex', gap: '12px', background: '#f8f8f8', borderRadius: '12px', padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', gap: '8px', background: '#f8f8f8', borderRadius: '12px', padding: '12px 14px' }}>
                     <MacroPill label="Protein" value={meal.protein} color="#8BC34A" />
                     <MacroPill label="Carbs" value={meal.carbs} color="#FFC107" />
                     <MacroPill label="Fat" value={meal.fat} color="#FF7043" />
+                    <MacroPill label="Fiber" value={meal.fiber || 0} color="#9C27B0" />
                   </div>
                 </motion.div>
               ))

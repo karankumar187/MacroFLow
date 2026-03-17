@@ -13,6 +13,7 @@ export default function CalorieGauge({ totals, goals }) {
   const protein = { current: totals?.protein || 0, goal: goals?.macroGoals?.protein || 150 };
   const carbs = { current: totals?.carbs || 0, goal: goals?.macroGoals?.carbs || 200 };
   const fat = { current: totals?.fat || 0, goal: goals?.macroGoals?.fat || 65 };
+  const fiber = { current: totals?.fiber || 0, goal: goals?.macroGoals?.fiber || 30 };
 
   // Animated sweep
   const sweep = useMotionValue(0);
@@ -109,11 +110,12 @@ export default function CalorieGauge({ totals, goals }) {
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: '24px',
+          gap: '12px',
         }}>
           <MacroStat label="Protein" value={protein.current} goal={protein.goal} color="#689F38" />
           <MacroStat label="Carbs" value={carbs.current} goal={carbs.goal} color="#FFC107" />
           <MacroStat label="Fat" value={fat.current} goal={fat.goal} color="#FF7043" />
+          <MacroStat label="Fiber" value={fiber.current} goal={fiber.goal} color="#9C27B0" />
         </div>
       </div>
     </motion.div>

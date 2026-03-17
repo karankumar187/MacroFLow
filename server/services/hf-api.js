@@ -14,10 +14,10 @@ async function parseFoodInput(text) {
 Input: "${text}"
 
 Return EXACTLY this JSON structure, nothing else:
-{"foods":[{"food_name":"name","calories":0,"protein":0,"carbs":0,"fat":0,"estimated_weight_g":0}]}
+{"foods":[{"food_name":"name","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"estimated_weight_g":0}]}
 
 Rules:
-- Make reasonable estimates for portions and macros
+- Make reasonable estimates for portions and macros, including dietary fiber
 - Do not wrap in markdown \`\`\`
 - Return ONLY the raw JSON string`;
 

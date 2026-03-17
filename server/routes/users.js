@@ -8,11 +8,21 @@ router.post('/', authMiddleware, async (req, res) => {
   try {
     const user = req.user;
     const updateFields = ['name', 'currentWeight', 'targetWeight', 'height',
-      'age', 'gender', 'activityLevel', 'dietStyle'];
+      'age', 'gender', 'activityLevel', 'dietStyle', 'isCustomGoals'];
 
     updateFields.forEach(field => {
       if (req.body[field] !== undefined) user[field] = req.body[field];
     });
+
+    if (req.body.isCustomGoals && req.body.calorieGoal) {
+       user.calorieGoal = req.body.calorieGoal;
+       user.macroGoals = {
+         protein: req.body.macroGoals?.protein || 0,
+         carbs: req.body.macroGoals?.carbs || 0,
+         fat: req.body.macroGoals?.fat || 0,
+         fiber: req.body.macroGoals?.fiber || 0,
+       };
+    }
 
     user.profileComplete = true;
     user.calculateGoals();

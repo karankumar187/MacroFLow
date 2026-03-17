@@ -25,10 +25,12 @@ const userSchema = new mongoose.Schema({
   },
   tdee: { type: Number, default: 0 },
   calorieGoal: { type: Number, default: 0 },
+  isCustomGoals: { type: Boolean, default: false },
   macroGoals: {
     protein: { type: Number, default: 0 },
     carbs: { type: Number, default: 0 },
-    fat: { type: Number, default: 0 }
+    fat: { type: Number, default: 0 },
+    fiber: { type: Number, default: 0 }
   },
   profileComplete: { type: Boolean, default: false }
 }, { timestamps: true });
@@ -47,6 +49,11 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 
 // Calculate TDEE and macro goals
 userSchema.methods.calculateGoals = function() {
+  if (this.isCustomGoals) {
+    // Skip auto-calculation, but ensure we don't zero out missing fields inadvertently
+    return this;
+  }
+
   let bmr;
   if (this.gender === 'male') {
     bmr = 10 * this.currentWeight + 6.25 * this.height - 5 * this.age + 5;
@@ -80,7 +87,8 @@ userSchema.methods.calculateGoals = function() {
   this.macroGoals = {
     protein: Math.round((this.calorieGoal * split.protein) / 4),
     carbs: Math.round((this.calorieGoal * split.carbs) / 4),
-    fat: Math.round((this.calorieGoal * split.fat) / 9)
+    fat: Math.round((this.calorieGoal * split.fat) / 9),
+    fiber: 30 // Healthy default base for auto-calculated fiber
   };
 
   return this;

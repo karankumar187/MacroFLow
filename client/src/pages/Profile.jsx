@@ -27,6 +27,8 @@ export default function Profile() {
     name: '', email: '', currentWeight: '', targetWeight: '',
     height: '', age: '', gender: 'male',
     activityLevel: 'moderate', dietStyle: 'balanced',
+    isCustomGoals: false, calorieGoal: '',
+    proteinGoal: '', carbsGoal: '', fatGoal: '', fiberGoal: ''
   });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,12 @@ export default function Profile() {
         gender: res.data.gender || 'male',
         activityLevel: res.data.activityLevel || 'moderate',
         dietStyle: res.data.dietStyle || 'balanced',
+        isCustomGoals: res.data.isCustomGoals || false,
+        calorieGoal: res.data.calorieGoal || '',
+        proteinGoal: res.data.macroGoals?.protein || '',
+        carbsGoal: res.data.macroGoals?.carbs || '',
+        fatGoal: res.data.macroGoals?.fat || '',
+        fiberGoal: res.data.macroGoals?.fiber || '',
       });
     }).catch(() => {});
   }, []);
@@ -60,6 +68,13 @@ export default function Profile() {
         targetWeight: parseFloat(form.targetWeight),
         height: parseFloat(form.height),
         age: parseInt(form.age),
+        calorieGoal: form.isCustomGoals ? parseInt(form.calorieGoal) : undefined,
+        macroGoals: form.isCustomGoals ? {
+          protein: parseInt(form.proteinGoal),
+          carbs: parseInt(form.carbsGoal),
+          fat: parseInt(form.fatGoal),
+          fiber: parseInt(form.fiberGoal)
+        } : undefined
       };
       const { data } = await createOrUpdateUser(payload);
       setUser(data);
@@ -216,6 +231,61 @@ export default function Profile() {
           </div>
         </motion.div>
 
+        {/* Custom Goals Toggle */}
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.45 }} className="card" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: form.isCustomGoals ? '16px' : '0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Target size={16} color="#E91E63" />
+              <div>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a' }}>Manual Goals</h3>
+                <span style={{ fontSize: '11px', color: '#999' }}>Override auto-calculated macros</span>
+              </div>
+            </div>
+            
+            {/* Simple Toggle Switch */}
+            <div 
+              onClick={() => handleChange('isCustomGoals', !form.isCustomGoals)}
+              style={{
+                width: '44px', height: '24px', background: form.isCustomGoals ? '#E91E63' : '#ccc',
+                borderRadius: '12px', position: 'relative', cursor: 'pointer', transition: '0.2s'
+              }}
+            >
+              <div style={{
+                width: '20px', height: '20px', background: '#fff', borderRadius: '50%',
+                position: 'absolute', top: '2px', left: form.isCustomGoals ? '22px' : '2px', transition: '0.2s'
+              }} />
+            </div>
+          </div>
+
+          {form.isCustomGoals && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '6px' }}>Daily Calories</label>
+                <input className="input-field" type="number" value={form.calorieGoal} onChange={(e) => handleChange('calorieGoal', e.target.value)} placeholder="2000" required />
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '6px' }}>Protein (g)</label>
+                  <input className="input-field" type="number" value={form.proteinGoal} onChange={(e) => handleChange('proteinGoal', e.target.value)} placeholder="150" required />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '6px' }}>Carbs (g)</label>
+                  <input className="input-field" type="number" value={form.carbsGoal} onChange={(e) => handleChange('carbsGoal', e.target.value)} placeholder="200" required />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '6px' }}>Fat (g)</label>
+                  <input className="input-field" type="number" value={form.fatGoal} onChange={(e) => handleChange('fatGoal', e.target.value)} placeholder="65" required />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '6px' }}>Fiber (g)</label>
+                  <input className="input-field" type="number" value={form.fiberGoal} onChange={(e) => handleChange('fiberGoal', e.target.value)} placeholder="30" required />
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+
         {/* TDEE Display */}
         {user && (
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="card" style={{ padding: '20px' }}>
@@ -229,7 +299,7 @@ export default function Profile() {
                 { label: 'TDEE', value: `${user.tdee}`, unit: 'kcal', color: '#FFC107' },
                 { label: 'Goal', value: `${user.calorieGoal}`, unit: 'kcal', color: '#8BC34A' },
                 { label: 'Protein', value: `${user.macroGoals?.protein}`, unit: 'g', color: '#2196F3' },
-                { label: 'Carbs/Fat', value: `${user.macroGoals?.carbs}/${user.macroGoals?.fat}`, unit: 'g', color: '#FF7043' },
+                { label: 'C/F/Fib', value: `${user.macroGoals?.carbs}/${user.macroGoals?.fat}/${user.macroGoals?.fiber || 0}`, unit: 'g', color: '#FF7043' },
               ].map((stat, i) => (
                 <div key={i} style={{
                   textAlign: 'center', padding: '12px',
@@ -271,7 +341,7 @@ export default function Profile() {
           ) : (
             <>
               <Save size={18} />
-              Save & Calculate Goals
+              {form.isCustomGoals ? 'Save Custom Goals' : 'Save & Calculate Goals'}
             </>
           )}
         </motion.button>
