@@ -8,29 +8,21 @@ const passport = require('./config/passport');
 const app = express();
 
 // MongoDB connection caching for serverless
-let isConnected = false;
+let cachedConnection = null;
 async function connectDB() {
-  if (isConnected) return;
+  if (cachedConnection && mongoose.connection.readyState === 1) return;
   const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/macroflow';
-  await mongoose.connect(MONGODB_URI);
-  isConnected = true;
+  cachedConnection = await mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  });
   console.log('✅ Connected to MongoDB');
 }
 
-// Connect on import (for serverless warm starts)
-connectDB().catch(err => console.error('❌ MongoDB error:', err.message));
-
 // Middleware
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
-  'https://*.vercel.app'
-];
-
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    // Allow localhost and any vercel.app subdomain
     if (origin.includes('localhost') || origin.includes('vercel.app')) {
       return callback(null, true);
     }
@@ -51,6 +43,17 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Ensure DB is connected before ANY request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('❌ DB connection failed:', err.message);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
