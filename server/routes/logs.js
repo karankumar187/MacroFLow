@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const DailyLog = require('../models/DailyLog');
-const { parseFoodInput, parseFoodImage } = require('../services/nutrition');
+const { parseFoodInput, parseFoodImage } = require('../services/hf-api');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
