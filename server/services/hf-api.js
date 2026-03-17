@@ -1,9 +1,12 @@
-const { HfInference } = require('@huggingface/inference');
+const { OpenAI } = require('openai');
 
-const hf = new HfInference(process.env.HF_API_KEY);
+const openai = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY || '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', // free tier fallback key
+  // We use openrouter for reliable free models without rate limits
+});
 
-// Use a fast, reliable model for text parsing and chat
-const MODEL = 'meta-llama/Llama-3.2-3B-Instruct';
+const MODEL = 'mistralai/mistral-7b-instruct:free';
 
 /**
  * Parse natural language food input into structured macro data.
@@ -22,7 +25,7 @@ Rules:
 - Return ONLY the raw JSON string`;
 
   try {
-    const response = await hf.chatCompletion({
+    const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 500,
@@ -41,8 +44,8 @@ Rules:
     return JSON.parse(jsonStr);
 
   } catch (error) {
-    console.error('HuggingFace parseFoodInput failed:', error);
-    throw new Error(`HF API Error: ${error.message}`);
+    console.error('OpenRouter parseFoodInput failed:', error);
+    throw new Error(`AI API Error: ${error.message}`);
   }
 }
 
@@ -75,7 +78,7 @@ Recent Logs: ${logsContext || 'None'}
 Keep responses short, actionable, and encouraging.`;
 
   try {
-    const response = await hf.chatCompletion({
+    const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         { role: 'system', content: system },
@@ -87,7 +90,7 @@ Keep responses short, actionable, and encouraging.`;
 
     return response.choices[0].message.content;
   } catch (error) {
-    console.error('HuggingFace chatWithCoach failed:', error);
+    console.error('OpenRouter chatWithCoach failed:', error);
     throw new Error('Coach is currently unavailable. Please try again later.');
   }
 }
