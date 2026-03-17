@@ -6,7 +6,7 @@ const openai = new OpenAI({
   // We use openrouter for reliable free models without rate limits
 });
 
-const MODEL = 'mistralai/mistral-7b-instruct:free';
+const MODEL = 'google/gemini-2.0-flash-lite-preview-02-05:free';
 
 /**
  * Parse natural language food input into structured macro data.
