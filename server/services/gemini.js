@@ -3,7 +3,7 @@
  * Uses Qwen/Qwen2.5-72B-Instruct (free tier)
  */
 
-const HF_MODEL = 'meta-llama/Llama-3.2-3B-Instruct';
+const HF_MODEL = 'Qwen/Qwen2.5-Coder-32B-Instruct';
 const HF_API_URL = `https://router.huggingface.co/hf-inference/models/${HF_MODEL}/v1/chat/completions`;
 
 async function hfChat(messages, maxTokens = 1024) {
