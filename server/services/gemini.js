@@ -1,106 +1,92 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+/**
+ * AI Service — HuggingFace Inference API
+ * Uses Qwen/Qwen2.5-72B-Instruct (free tier)
+ */
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const HF_MODEL = 'Qwen/Qwen2.5-72B-Instruct';
+const HF_API_URL = `https://api-inference.huggingface.co/models/${HF_MODEL}/v1/chat/completions`;
+
+async function hfChat(messages, maxTokens = 1024) {
+  const response = await fetch(HF_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.HF_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: HF_MODEL,
+      messages,
+      max_tokens: maxTokens,
+      temperature: 0.3,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error('HuggingFace API error:', response.status, err);
+    throw new Error(`HuggingFace API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
 
 /**
  * Parse natural language food input into structured macro data.
- * e.g., "2 eggs and a bowl of oatmeal with blueberries"
  */
 async function parseFoodInput(text) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-  const prompt = `You are a precise nutrition database. Parse the following food description and return ONLY a valid JSON object (no markdown, no code fences).
-
-Food description: "${text}"
-
-Return this exact JSON structure:
-{
-  "foods": [
+  const messages = [
     {
-      "food_name": "descriptive name of the food item",
-      "calories": <number>,
-      "protein": <number in grams>,
-      "carbs": <number in grams>,
-      "fat": <number in grams>,
-      "estimated_weight_g": <number in grams>
-    }
-  ]
-}
+      role: 'system',
+      content: `You are a precise nutrition database. Parse food descriptions and return ONLY valid JSON. No markdown, no code fences, no explanation — just the JSON object.`
+    },
+    {
+      role: 'user',
+      content: `Parse this food description and return nutritional data as JSON:
+
+Food: "${text}"
+
+Return EXACTLY this structure:
+{"foods":[{"food_name":"name","calories":0,"protein":0,"carbs":0,"fat":0,"estimated_weight_g":0}]}
 
 Rules:
-- Break the input into individual food items
+- Break input into individual food items
 - Use standard USDA-style nutritional data
 - All numbers should be reasonable estimates
-- Return ONLY the JSON, nothing else`;
+- Return ONLY the JSON, nothing else`
+    }
+  ];
 
-  const result = await model.generateContent(prompt);
-  const response = result.response.text();
-
-  // Clean the response - remove markdown code fences if present
+  const response = await hfChat(messages, 512);
   const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
   try {
     return JSON.parse(cleaned);
   } catch (e) {
-    console.error('Failed to parse Gemini response:', cleaned);
+    console.error('Failed to parse HF response:', cleaned);
+    // Try to extract JSON from the response
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
     throw new Error('Failed to parse food data from AI response');
   }
 }
 
 /**
- * Parse a food photo/label using Gemini Vision.
+ * Parse food photo — HuggingFace free tier doesn't support vision,
+ * so we'll extract text description and parse that instead.
  */
 async function parseFoodImage(imageBuffer, mimeType) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-  const imagePart = {
-    inlineData: {
-      data: imageBuffer.toString('base64'),
-      mimeType: mimeType
-    }
-  };
-
-  const prompt = `Analyze this food image or nutrition label. Return ONLY a valid JSON object (no markdown, no code fences).
-
-Return this exact JSON structure:
-{
-  "foods": [
-    {
-      "food_name": "descriptive name",
-      "calories": <number>,
-      "protein": <number in grams>,
-      "carbs": <number in grams>,
-      "fat": <number in grams>,
-      "estimated_weight_g": <number in grams>
-    }
-  ]
-}
-
-Rules:
-- If it's a nutrition label, extract the exact values
-- If it's a photo of food, estimate based on visual portion size
-- All numbers should be realistic
-- Return ONLY the JSON, nothing else`;
-
-  const result = await model.generateContent([prompt, imagePart]);
-  const response = result.response.text();
-  const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    console.error('Failed to parse Gemini Vision response:', cleaned);
-    throw new Error('Failed to parse food data from image');
-  }
+  // HuggingFace free chat models don't support images
+  // Return a helpful error message
+  throw new Error('Photo parsing is not available with the current AI provider. Please use text input instead.');
 }
 
 /**
- * AI Nutrition Coach chat — injects user profile + recent logs for context.
+ * AI Nutrition Coach chat
  */
 async function chatWithCoach(message, userProfile, recentLogs) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-  // Build context from user data
   const logsContext = recentLogs.map(log => {
     const totals = log.meals.reduce((acc, m) => ({
       calories: acc.calories + m.calories,
@@ -112,7 +98,10 @@ async function chatWithCoach(message, userProfile, recentLogs) {
     return `Date: ${log.date} | Calories: ${totals.calories}/${userProfile.calorieGoal} | Protein: ${totals.protein}g/${userProfile.macroGoals.protein}g | Carbs: ${totals.carbs}g/${userProfile.macroGoals.carbs}g | Fat: ${totals.fat}g/${userProfile.macroGoals.fat}g | Meals: ${log.meals.map(m => m.foodName).join(', ')}`;
   }).join('\n');
 
-  const systemPrompt = `You are MacroFlow AI Coach — a friendly, knowledgeable nutrition coach. You have access to the user's profile and recent food logs.
+  const messages = [
+    {
+      role: 'system',
+      content: `You are MacroFlow AI Coach — a friendly, knowledgeable nutrition coach.
 
 USER PROFILE:
 - Name: ${userProfile.name}
@@ -130,17 +119,16 @@ INSTRUCTIONS:
 - Be encouraging but honest
 - Give specific, actionable advice
 - Reference their actual intake data when relevant
-- Suggest meals/recipes when asked
 - Keep responses concise and friendly
-- Use emojis sparingly for warmth`;
+- Use emojis sparingly for warmth`
+    },
+    {
+      role: 'user',
+      content: message
+    }
+  ];
 
-  const chat = model.startChat({
-    history: [],
-    systemInstruction: systemPrompt
-  });
-
-  const result = await chat.sendMessage(message);
-  return result.response.text();
+  return await hfChat(messages, 1024);
 }
 
 module.exports = { parseFoodInput, parseFoodImage, chatWithCoach };
