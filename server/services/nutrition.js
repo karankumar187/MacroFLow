@@ -1,9 +1,8 @@
 const axios = require('axios');
 
-// Using Nutritionix Natural Language for Food API (100% reliable, no AI hallucinations)
-// Fallback keys included for guaranteed execution immediately
-const NUTRITIONIX_APP_ID = process.env.NUTRITIONIX_APP_ID || '154055be';
-const NUTRITIONIX_API_KEY = process.env.NUTRITIONIX_API_KEY || '51965f903a48e89f46b41dff4bb2dcc0';
+// Edamam Food Database API (100% free developer tier)
+const EDAMAM_APP_ID = process.env.EDAMAM_APP_ID || 'ca4cd6f3';
+const EDAMAM_APP_KEY = process.env.EDAMAM_APP_KEY || '42ac7b76774edac890f64be735e2ba34';
 
 /**
  * Parse natural language food input into structured macro data.
@@ -11,28 +10,52 @@ const NUTRITIONIX_API_KEY = process.env.NUTRITIONIX_API_KEY || '51965f903a48e89f
  */
 async function parseFoodInput(text) {
   try {
-    const response = await axios.post(
-      'https://trackapi.nutritionix.com/v2/natural/nutrients',
-      { query: text },
-      {
-        headers: {
-          'x-app-id': NUTRITIONIX_APP_ID,
-          'x-app-key': NUTRITIONIX_API_KEY,
-          'Content-Type': 'application/json',
-        },
-      }
+    // Note: Edamam Parser API works best with single food queries
+    // We will query the API with the text to get exact macros
+    const query = encodeURIComponent(text);
+    const response = await axios.get(
+      `https://api.edamam.com/api/food-database/v2/parser?app_id=${EDAMAM_APP_ID}&app_key=${EDAMAM_APP_KEY}&ingr=${query}`
     );
 
-    const foods = response.data.foods.map(item => ({
-      food_name: item.food_name,
-      calories: Math.round(item.nf_calories || 0),
-      protein: Math.round(item.nf_protein || 0),
-      carbs: Math.round(item.nf_total_carbohydrate || 0),
-      fat: Math.round(item.nf_total_fat || 0),
-      estimated_weight_g: Math.round(item.serving_weight_grams || 0)
-    }));
+    if (!response.data.parsed || response.data.parsed.length === 0) {
+      if (!response.data.hints || response.data.hints.length === 0) {
+        throw new Error("No food found");
+      }
+      
+      // Use the first hint if no exact parsed match
+      const food = response.data.hints[0].food;
+      // Edamam gives nutrients per 100g. 
+      const nutrients = food.nutrients;
+      
+      return {
+        foods: [{
+          food_name: food.label,
+          calories: Math.round(nutrients.ENERC_KCAL || 0),
+          protein: Math.round(nutrients.PROCNT || 0),
+          carbs: Math.round(nutrients.CHOCDF || 0),
+          fat: Math.round(nutrients.FAT || 0),
+          estimated_weight_g: 100 // Edamam standard hint serving
+        }]
+      };
+    }
 
-    return { foods };
+    // Use exact parsed match if available
+    const parsed = response.data.parsed[0];
+    const food = parsed.food;
+    const nutrients = food.nutrients;
+    const qty = parsed.quantity || 1;
+    const measureWeight = parsed.measure?.weight || 100;
+
+    return {
+      foods: [{
+        food_name: food.label,
+        calories: Math.round((nutrients.ENERC_KCAL || 0) * (measureWeight / 100) * qty),
+        protein: Math.round((nutrients.PROCNT || 0) * (measureWeight / 100) * qty),
+        carbs: Math.round((nutrients.CHOCDF || 0) * (measureWeight / 100) * qty),
+        fat: Math.round((nutrients.FAT || 0) * (measureWeight / 100) * qty),
+        estimated_weight_g: Math.round(measureWeight * qty)
+      }]
+    };
   } catch (error) {
     console.error('Nutrition API Error:', error.response?.data || error.message);
     
