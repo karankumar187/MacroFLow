@@ -29,14 +29,14 @@ Rules:
     const start = cleaned.indexOf('{');
     const end = cleaned.lastIndexOf('}');
     if (start === -1 || end === -1) {
-      throw new Error(`No JSON found in response: \${cleaned}`);
+      throw new Error(`No JSON found in response: ${cleaned}`);
     }
     
     const jsonStr = cleaned.slice(start, end + 1);
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error('Gemini parseFoodInput failed:', error);
-    throw new Error(`Gemini API Error: \${error.message}`);
+    throw new Error(`Gemini API Error: ${error.message}`);
   }
 }
 
@@ -70,14 +70,14 @@ Rules:
     const start = cleaned.indexOf('{');
     const end = cleaned.lastIndexOf('}');
     if (start === -1 || end === -1) {
-      throw new Error(`No JSON found in response: \${cleaned}`);
+      throw new Error(`No JSON found in response: ${cleaned}`);
     }
     
     const jsonStr = cleaned.slice(start, end + 1);
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error('Gemini parseFoodImage failed:', error);
-    throw new Error(`Gemini Vision Error: \${error.message}`);
+    throw new Error(`Gemini Vision Error: ${error.message}`);
   }
 }
 
@@ -93,13 +93,13 @@ async function chatWithCoach(message, userProfile, recentLogs) {
       fat: acc.fat + m.fat
     }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-    return `Date: \${log.date} | Cals: \${totals.calories}/\${userProfile.calorieGoal} | P: \${totals.protein}g C: \${totals.carbs}g F: \${totals.fat}g`;
-  }).join('\\n');
+    return `Date: ${log.date} | Cals: ${totals.calories}/${userProfile.calorieGoal} | P: ${totals.protein}g C: ${totals.carbs}g F: ${totals.fat}g`;
+  }).join('\n');
 
   const systemPrompt = `You are MacroFlow AI Coach — a concise, friendly nutrition coach.
-User: \${userProfile.name}, \${userProfile.currentWeight}kg -> \${userProfile.targetWeight}kg
-Goal: \${userProfile.calorieGoal} kcal/day
-Recent Logs: \${logsContext || 'None'}
+User: ${userProfile.name}, ${userProfile.currentWeight}kg -> ${userProfile.targetWeight}kg
+Goal: ${userProfile.calorieGoal} kcal/day
+Recent Logs: ${logsContext || 'None'}
 Keep responses short, actionable, and encouraging.`;
 
   try {
