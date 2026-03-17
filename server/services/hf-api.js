@@ -42,7 +42,7 @@ Rules:
 
   } catch (error) {
     console.error('HuggingFace parseFoodInput failed:', error);
-    throw new Error('Failed to parse food data. API might be overloaded.');
+    throw new Error(`HF API Error: ${error.message}`);
   }
 }
 
