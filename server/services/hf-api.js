@@ -9,7 +9,7 @@ const MODEL = 'Qwen/Qwen2.5-72B-Instruct';
  * Parse natural language food input into structured macro data.
  */
 async function parseFoodInput(text) {
-  const prompt = `You are a strict JSON API. Parse this food and return ONLY valid JSON.
+  const prompt = `You are an expert nutrition AI and strict JSON API. Parse this food and return ONLY valid JSON.
 
 Input: "${text}"
 
@@ -17,7 +17,8 @@ Return EXACTLY this JSON structure, nothing else:
 {"foods":[{"food_name":"name","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"estimated_weight_g":0}]}
 
 Rules:
-- Make reasonable estimates for portions and macros, including dietary fiber
+- NEVER mix up macronutrients! Pay extremely close attention to the definition of "protein", "carbs" and "fat". For example, meat has high protein/zero carbs, bread has high carbs/low protein. Do NOT swap these values!
+- Make reasonable estimates for portions and macros, including dietary fiber.
 - Do not wrap in markdown \`\`\`
 - Return ONLY the raw JSON string`;
 
