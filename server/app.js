@@ -58,6 +58,11 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/chat', require('./routes/chat'));
 
+// Root
+app.get('/', (req, res) => {
+  res.json({ name: 'MacroFlow API', status: 'running' });
+});
+
 // Silence favicon requests
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
