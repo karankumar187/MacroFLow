@@ -4,7 +4,7 @@
  */
 
 const HF_MODEL = 'Qwen/Qwen2.5-72B-Instruct';
-const HF_API_URL = `https://api-inference.huggingface.co/models/${HF_MODEL}/v1/chat/completions`;
+const HF_API_URL = `https://router.huggingface.co/hf-inference/models/${HF_MODEL}/v1/chat/completions`;
 
 async function hfChat(messages, maxTokens = 1024) {
   const response = await fetch(HF_API_URL, {
