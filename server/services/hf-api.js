@@ -3,7 +3,7 @@ const { HfInference } = require('@huggingface/inference');
 const hf = new HfInference(process.env.HF_API_KEY);
 
 // Use a fast, reliable model for text parsing and chat
-const MODEL = 'meta-llama/Llama-3.2-3B-Instruct';
+const MODEL = 'Qwen/Qwen2.5-72B-Instruct';
 
 /**
  * Parse natural language food input into structured macro data.
