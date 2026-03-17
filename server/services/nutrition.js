@@ -22,38 +22,46 @@ async function parseFoodInput(text) {
         throw new Error("No food found");
       }
       
-      // Use the first hint if no exact parsed match
       const food = response.data.hints[0].food;
-      // Edamam gives nutrients per 100g. 
       const nutrients = food.nutrients;
+      
+      // Try to parse quantity from text heuristically
+      const qtyMatch = text.match(/([0-9.]+)/);
+      const qty = qtyMatch ? parseFloat(qtyMatch[1]) : 1;
+      const isGrams = text.toLowerCase().includes('g');
+      
+      // Base serving weight estimate
+      const baseWeight = isGrams ? qty : (qty * 100);
+      const multiplier = baseWeight / 100;
       
       return {
         foods: [{
           food_name: food.label,
-          calories: Math.round(nutrients.ENERC_KCAL || 0),
-          protein: Math.round(nutrients.PROCNT || 0),
-          carbs: Math.round(nutrients.CHOCDF || 0),
-          fat: Math.round(nutrients.FAT || 0),
-          estimated_weight_g: 100 // Edamam standard hint serving
+          calories: Math.round((nutrients.ENERC_KCAL || 0) * multiplier),
+          protein: Math.round((nutrients.PROCNT || 0) * multiplier),
+          carbs: Math.round((nutrients.CHOCDF || 0) * multiplier),
+          fat: Math.round((nutrients.FAT || 0) * multiplier),
+          estimated_weight_g: Math.round(baseWeight)
         }]
       };
     }
 
-    // Use exact parsed match if available
     const parsed = response.data.parsed[0];
     const food = parsed.food;
     const nutrients = food.nutrients;
     const qty = parsed.quantity || 1;
     const measureWeight = parsed.measure?.weight || 100;
+    const totalWeight = measureWeight * qty;
+    const multiplier = totalWeight / 100;
 
     return {
       foods: [{
         food_name: food.label,
-        calories: Math.round((nutrients.ENERC_KCAL || 0) * (measureWeight / 100) * qty),
-        protein: Math.round((nutrients.PROCNT || 0) * (measureWeight / 100) * qty),
-        carbs: Math.round((nutrients.CHOCDF || 0) * (measureWeight / 100) * qty),
-        fat: Math.round((nutrients.FAT || 0) * (measureWeight / 100) * qty),
-        estimated_weight_g: Math.round(measureWeight * qty)
+        calories: Math.round((nutrients.ENERC_KCAL || 0) * multiplier),
+        protein: Math.round((nutrients.PROCNT || 0) * multiplier),
+        carbs: Math.round((nutrients.CHOCDF || 0) * multiplier),
+        fat: Math.round((nutrients.FAT || 0) * multiplier),
+        estimated_weight_g: Math.round(totalWeight)
       }]
     };
   } catch (error) {
